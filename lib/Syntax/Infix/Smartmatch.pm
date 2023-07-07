@@ -50,7 +50,7 @@ This is equivalent to C<$left =~ $right>.
 
 =item * sub
 
-It will return the value of C<$right->($left)>
+It will return the value of C<< $right->($left) >>
 
 =item * array
 
