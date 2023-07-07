@@ -26,7 +26,7 @@ sub unimport {
 
 =head1 SYNOPSIS
 
- say "YES" if $value ~~ [1, 2, /42/];
+ say "YES" if $value ~~ [1, 2, qr/42/];
 
 =head1 DESCRIPTION
 
