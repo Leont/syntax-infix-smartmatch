@@ -202,7 +202,7 @@ static OP* pp_smartermatch(pTHX) {
 
 #if PERL_VERSION_GE(5, 38, 0)
 static const struct XSParseInfixHooks hooks_smarter = {
-	.cls            = XPI_CLS_EQUALITY,
+	.cls            = XPI_CLS_MATCH_MISC,
 	.permit_hintkey = "Syntax::Infix::Smartmatch/enabled",
 	.ppaddr         = &pp_smartermatch,
 };

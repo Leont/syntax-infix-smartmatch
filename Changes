@@ -2,6 +2,7 @@ Revision history for Syntax-Infix-Smartmatch
 
 {{$NEXT}}
           - Fix minimum perl version
+          - Change classification from equality to match
 
 0.002     2023-07-07 16:08:00+02:00 Europe/Brussels
           - Fix documentation mistakes
