@@ -62,6 +62,6 @@ This will always return C<$right>. This particularly is useful in second order c
 
 =item * other
 
-This will return C<$left equ $right> (C<defined $left and $left equ $right>).
+This will return C<$left equ $right> (C<defined $left and $left eq $right>).
 
 =back
