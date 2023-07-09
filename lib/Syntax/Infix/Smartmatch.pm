@@ -56,10 +56,6 @@ It will return the value of C<< $right->($left) >>
 
 This will compare every element of C<@$left> to see if it smartmatches every element of C<@$right>. E.g. C<< $left->[0] ~~ $right->[0] && $left->[1] ~~ $right->[1] && ... >>
 
-=item * bool
-
-This will always return C<$right>. This particularly is useful in second order constructs such as L<Syntax::Keyword::Match> (e.g. C<< case($topic > 1) >>. Bools are only available on perl v5.36 and up.
-
 =item * other
 
 This will return C<$left equ $right> (C<defined $left and $left eq $right>).

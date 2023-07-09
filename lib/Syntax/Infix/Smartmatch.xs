@@ -180,12 +180,6 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 		}
 	}
 	/* ~~ scalar */
-#if PERL_VERSION_GE(5, 36, 0)
-	else if (SvIsBOOL(e)) {
-		PUSHs(e);
-		RETURN;
-	}
-#endif
 
 	/* As a last resort, use string comparison */
 	bool result = SvOK(d) && sv_eq_flags(d, e, 0);

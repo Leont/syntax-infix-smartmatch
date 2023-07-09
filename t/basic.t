@@ -15,10 +15,5 @@ ok 1 ~~ qr/1/;
 ok !(1 ~~ undef);
 ok !({ a => 1 } ~~ { a => 2 });
 
-SKIP: {
-	skip '', 1 if $] < 5.036;
-	ok (!!0 ~~ (1 > 0));
-}
-
 
 done_testing;
