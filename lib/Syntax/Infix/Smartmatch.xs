@@ -80,9 +80,7 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 	else if (SvROK(e)) {
 		/* First of all, handle overload magic of the rightmost argument */
 		if (SvAMAGIC(e)) {
-			SV * tmpsv;
-
-			tmpsv = amagic_call(d, e, smart_amg, AMGf_noleft);
+			SV * tmpsv = amagic_call(d, e, smart_amg, AMGf_noleft);
 			if (tmpsv) {
 				SPAGAIN;
 				PUSHs(tmpsv);
@@ -132,51 +130,24 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 		}
 		/* ~~ @array */
 		else if (SvTYPE(SvRV(e)) == SVt_PVAV) {
-			if (SvROK(d) && SvTYPE(SvRV(d)) == SVt_PVAV) {
-				AV *other_av = MUTABLE_AV(SvRV(d));
-				if (av_count(MUTABLE_AV(SvRV(e))) != av_count(other_av))
-					RETPUSHNO;
-				else {
-					Size_t i;
-					const Size_t other_len = av_count(other_av);
+			Size_t i;
+			const Size_t this_len = av_count(MUTABLE_AV(SvRV(e)));
 
-					if (seen_this == NULL)
-						seen_this = (HV*)newSV_type_mortal(SVt_PVHV);
-					if (seen_other == NULL)
-						seen_other = (HV*)newSV_type_mortal(SVt_PVHV);
+			for (i = 0; i < this_len; ++i) {
+				SV * const * const svp = av_fetch(MUTABLE_AV(SvRV(e)), i, FALSE);
+				if (!svp)
+					continue;
 
-					for(i = 0; i < other_len; ++i) {
-						SV * const * const this_elem = av_fetch(MUTABLE_AV(SvRV(e)), i, FALSE);
-						SV * const * const other_elem = av_fetch(other_av, i, FALSE);
-
-						if (!this_elem || !other_elem) {
-							if ((this_elem && SvOK(*this_elem)) || (other_elem && SvOK(*other_elem)))
-								RETPUSHNO;
-						}
-						else if (hv_exists_ent(seen_this, sv_2mortal(newSViv(PTR2IV(*this_elem))), 0) ||
-								hv_exists_ent(seen_other, sv_2mortal(newSViv(PTR2IV(*other_elem))), 0)) {
-							if (*this_elem != *other_elem)
-								RETPUSHNO;
-						}
-						else {
-							(void)hv_store_ent(seen_this, sv_2mortal(newSViv(PTR2IV(*this_elem))), &PL_sv_undef, 0);
-							(void)hv_store_ent(seen_other, sv_2mortal(newSViv(PTR2IV(*other_elem))), &PL_sv_undef, 0);
-							PUSHs(*other_elem);
-							PUSHs(*this_elem);
-
-							PUTBACK;
-							(void) do_smartmatch(seen_this, seen_other);
-							SPAGAIN;
-
-							if (!SvTRUEx(POPs))
-								RETPUSHNO;
-						}
-					}
+				PUSHs(d);
+				PUSHs(*svp);
+				PUTBACK;
+				/* infinite recursion isn't supposed to happen here */
+				(void) do_smartmatch(NULL, NULL);
+				SPAGAIN;
+				if (SvTRUEx(POPs))
 					RETPUSHYES;
-				}
 			}
-			else
-				RETPUSHNO;
+			RETPUSHNO;
 		}
 	}
 	/* ~~ scalar */

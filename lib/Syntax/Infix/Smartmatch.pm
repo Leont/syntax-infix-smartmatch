@@ -54,7 +54,7 @@ It will return the value of C<< $right->($left) >>
 
 =item * array
 
-This will compare every element of C<@$left> to see if it smartmatches every element of C<@$right>. E.g. C<< $left->[0] ~~ $right->[0] && $left->[1] ~~ $right->[1] && ... >>
+This will return true if C<$left> smartmatches any of the members of C<@$right>.
 
 =item * other
 
