@@ -1,6 +1,8 @@
 Revision history for Syntax-Infix-Smartmatch
 
 {{$NEXT}}
+
+0.004     2023-07-10 20:50:30+02:00 Europe/Brussels
           - Eliminate boolean match
           - Make array match do any instead
 
