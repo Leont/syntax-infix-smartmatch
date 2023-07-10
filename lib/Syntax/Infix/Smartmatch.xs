@@ -47,13 +47,8 @@ static Perl_ppaddr_t orig_smartmatch;
 /* This version of do_smartmatch() implements an
    alternative table of matches.
  */
-#define do_smartmatch(seen_this, seen_other) S_do_smartmatch(aTHX_ seen_this, seen_other)
-STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
-	dSP;
-
-	SV *e = TOPs;	/* e is for 'expression' */
-	SV *d = TOPm1s;	/* d is for 'default', as in PL_defgv */
-
+#define do_smartmatch(d, e) S_do_smartmatch(aTHX_ d, e)
+STATIC bool S_do_smartmatch(pTHX, SV* d, SV* e) {
 	/* Take care only to invoke mg_get() once for each argument.
 	 * Currently we do this by copying the SV if it's magical. */
 	if (d) {
@@ -67,30 +62,21 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 	if (SvGMAGICAL(e))
 		e = sv_mortalcopy(e);
 
-	SP -= 2;	/* Pop the values */
-	PUTBACK;
-
 	/* ~~ undef */
 	if (!SvOK(e)) {
-		if (SvOK(d))
-			RETPUSHNO;
-		else
-			RETPUSHYES;
+		return !SvOK(d);
 	}
 	else if (SvROK(e)) {
 		/* First of all, handle overload magic of the rightmost argument */
 		if (SvAMAGIC(e)) {
-			SV * tmpsv = amagic_call(d, e, smart_amg, AMGf_noleft);
-			if (tmpsv) {
-				SPAGAIN;
-				PUSHs(tmpsv);
-				RETURN;
-			}
+			SV* sv = amagic_call(d, e, smart_amg, AMGf_noleft);
+			if (sv)
+				return SvTRUEx(sv);
 		}
 
 		/* ~~ qr// */
 		if (SvTYPE(SvRV(e)) == SVt_REGEXP) {
-			bool result;
+			dSP;
 			REGEXP* re = (REGEXP*)SvRV(e);
 			PMOP* const matcher = cPMOPx(newPMOP(OP_MATCH, OPf_WANT_SCALAR | OPf_STACKED));
 			PM_SETRE(matcher, ReREFCNT_inc(re));
@@ -104,29 +90,27 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 			PUTBACK;
 			(void) PL_ppaddr[OP_MATCH](aTHX);
 			SPAGAIN;
-			result = SvTRUEx(POPs);
-			PUSHs(result ? &PL_sv_yes : &PL_sv_no);
-
+			bool result = SvTRUEx(POPs);
+			PUTBACK;
 			LEAVE_with_name("matcher");
-			RETURN;
+			return result;
 		}
 		/* Non-overloaded object */
-		else if (SvOBJECT(SvRV(e))) {
-			PUSHs(d == e ? &PL_sv_yes : &PL_sv_no);
-		}
+		else if (SvOBJECT(SvRV(e)))
+			return d == e;
 		/* ~~ sub */
 		else if (SvTYPE(SvRV(e)) == SVt_PVCV) {
-			I32 c;
+			dSP;
 			ENTER_with_name("smartmatch_array_elem_test");
 			PUSHMARK(SP);
 			PUSHs(d);
 			PUTBACK;
-			c = call_sv(e, G_SCALAR);
+			I32 c = call_sv(e, G_SCALAR);
 			SPAGAIN;
-			if (c == 0)
-				PUSHs(&PL_sv_no);
+			bool result = c == 0 ? FALSE : SvTRUEx(POPs);
+			PUTBACK;
 			LEAVE_with_name("smartmatch_array_elem_test");
-			RETURN;
+			return result;
 		}
 		/* ~~ @array */
 		else if (SvTYPE(SvRV(e)) == SVt_PVAV) {
@@ -138,30 +122,27 @@ STATIC OP * S_do_smartmatch(pTHX_ HV *seen_this, HV *seen_other) {
 				if (!svp)
 					continue;
 
-				PUSHs(d);
-				PUSHs(*svp);
-				PUTBACK;
-				/* infinite recursion isn't supposed to happen here */
-				(void) do_smartmatch(NULL, NULL);
-				SPAGAIN;
-				if (SvTRUEx(POPs))
-					RETPUSHYES;
+				if (do_smartmatch(d, *svp))
+					return TRUE;
 			}
-			RETPUSHNO;
+			return FALSE;
 		}
 	}
-	/* ~~ scalar */
-
 	/* As a last resort, use string comparison */
-	bool result = SvOK(d) && sv_eq_flags(d, e, 0);
-	PUSHs(result ? &PL_sv_yes : &PL_sv_no);
-	RETURN;
+	return SvOK(d) && sv_eq_flags(d, e, 0);
 }
 
 static OP* pp_smartermatch(pTHX) {
-	if (smartermatch_enabled())
-		return do_smartmatch(NULL, NULL);
-	else
+	if (smartermatch_enabled()) {
+		dSP;
+		SV *e = POPs; /* e is for 'expression' */
+		SV *d = POPs; /* d is for 'default', as in PL_defgv */
+		PUTBACK;
+		bool result = do_smartmatch(d, e);
+		SPAGAIN;
+		PUSHs(result ? &PL_sv_yes : &PL_sv_no);
+		RETURN;
+	} else
 		return orig_smartmatch(aTHX);
 }
 
