@@ -133,16 +133,20 @@ STATIC bool S_do_smartmatch(pTHX, SV* d, SV* e) {
 }
 
 static OP* pp_smartermatch(pTHX) {
-	if (smartermatch_enabled()) {
-		dSP;
-		SV *e = POPs; /* e is for 'expression' */
-		SV *d = POPs; /* d is for 'default', as in PL_defgv */
-		PUTBACK;
-		bool result = do_smartmatch(d, e);
-		SPAGAIN;
-		PUSHs(result ? &PL_sv_yes : &PL_sv_no);
-		RETURN;
-	} else
+	dSP;
+	SV *e = POPs; /* e is for 'expression' */
+	SV *d = POPs; /* d is for 'default', as in PL_defgv */
+	PUTBACK;
+	bool result = do_smartmatch(d, e);
+	SPAGAIN;
+	PUSHs(result ? &PL_sv_yes : &PL_sv_no);
+	RETURN;
+}
+
+static OP* pp_smartermatch_switch(pTHX) {
+	if (smartermatch_enabled())
+		return pp_smartermatch(aTHX);
+	else
 		return orig_smartmatch(aTHX);
 }
 
@@ -165,7 +169,7 @@ BOOT:
 	if (!initialized) {
 		initialized = 1;
 		orig_smartmatch = PL_ppaddr[OP_SMARTMATCH];
-		PL_ppaddr[OP_SMARTMATCH] = pp_smartermatch;
+		PL_ppaddr[OP_SMARTMATCH] = pp_smartermatch_switch;
 	}
 	OP_CHECK_MUTEX_UNLOCK;
 #	if PERL_VERSION_GE(5, 38, 0)
