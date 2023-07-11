@@ -1,6 +1,7 @@
 Revision history for Syntax-Infix-Smartmatch
 
 {{$NEXT}}
+          - Fix compilation issue on unthreaded perl
           - Move bugtracker to github
 
 0.004     2023-07-10 20:50:30+02:00 Europe/Brussels

@@ -48,7 +48,7 @@ static Perl_ppaddr_t orig_smartmatch;
    alternative table of matches.
  */
 #define do_smartmatch(d, e) S_do_smartmatch(aTHX_ d, e)
-STATIC bool S_do_smartmatch(pTHX, SV* d, SV* e) {
+STATIC bool S_do_smartmatch(pTHX_ SV* d, SV* e) {
 	/* Take care only to invoke mg_get() once for each argument.
 	 * Currently we do this by copying the SV if it's magical. */
 	if (d) {
