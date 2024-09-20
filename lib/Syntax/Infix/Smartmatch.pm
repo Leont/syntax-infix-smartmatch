@@ -4,15 +4,20 @@ use strict;
 use warnings;
 
 use XSLoader;
+use overload ();
 
 XSLoader::load(__PACKAGE__, __PACKAGE__->VERSION);
 
-my $warning = $] >= 5.038 ? 'deprecated::smartmatch' : $] >= 5.018 ? 'experimental::smartmatch' : undef;
+use constant PERL_VERSION => $];
 
 sub import {
 	$^H |= 0x020000;
 	$^H{"Syntax::Infix::Smartmatch/enabled"} = 1;
-	warnings->unimport($warning) if defined $warning;
+
+	if (PERL_VERSION < 5.041001 || PERL_VERSION >= 5.018) {
+		my $warning = PERL_VERSION >= 5.038 ? 'deprecated::smartmatch' : 'experimental::smartmatch';
+		warnings->unimport($warning);
+	}
 }
 
 sub unimport {
